@@ -1,6 +1,6 @@
 // ================================= DOCUMENTATION ------------------------------------------
 // Script: MapView.jsx
-// Purpose: Código limpo, leve e 100% alinhado ao CSS customizado, com rastreio de talhão ativo.
+// Purpose: Código limpo, leve, otimizado com cliques nos nomes, cores mais vivas e botão GPS flutuante.
 // Relationships: Usa dados em TopoJSON e Leaflet.
 // ================================= VARIABLES ----------------------------------------------
 
@@ -15,17 +15,11 @@ import pinCustomizado from '../assets/pin.png';
 
 const CONFIG_ZOOM_PROXIMIDADE = 16;
 
-// Cores para quando você entrar fisicamente em um lote!
-const COR_LOTE_ATIVO_BORDA = '#FF8C00'; // Laranja Vivo
+// Paleta de Cores Customizada
+const COR_LOTE_ATIVO_BORDA = '#FF8C00'; // Laranja Vivo (Onde você está pisando)
 const COR_LOTE_ATIVO_FUNDO = '#FFDAB9'; // Laranja Pastel
 
 // ================================= ICONES -------------------------------------------------
-
-const iconeInvisivel = new L.DivIcon({
-  className: 'invisible-marker',
-  html: '',
-  iconSize: [0, 0]
-});
 
 const iconeGps = new L.Icon({
   iconUrl: pinCustomizado,
@@ -33,9 +27,17 @@ const iconeGps = new L.Icon({
   iconAnchor: [17, 34]
 });
 
+// Helper para gerar o ícone de texto físico (agora é clicável de verdade!)
+const criarIconeTexto = (nome) => new L.DivIcon({
+  className: 'map-label-custom clickable-marker',
+  html: nome,
+  iconSize: null, // Deixa o conteúdo ditar o tamanho
+  iconAnchor: [0, 0] // O CSS cuida de centralizar
+});
+
 // ================================= HELPERS ------------------------------------------------
 
-// Lógica ninja para identificar se o GPS do Paulo está dentro de um polígono
+// Algoritmo Ray-Casting levinho para validação de coordenadas no dispositivo
 const isPointInPolygon = (point, vs) => {
   let x = point[0], y = point[1];
   let inside = false;
@@ -106,18 +108,15 @@ export default function MapView() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
 
-  // Exigências aplicadas nos checkboxes (como o chefe pediu)
   const [showFieldNames, setShowFieldNames] = useState(true);
   const [showLots, setShowLots] = useState(false);
   const [showStreets, setShowStreets] = useState(false);
 
-  // Menu começa aberto
   const [bottomMenuOpen, setBottomMenuOpen] = useState(true);
   
   const [posicaoUsuario, setPosicaoUsuario] = useState(null);
   const [camera, setCamera] = useState({ bounds: null, center: [-9.39, -40.50], zoom: 12 });
   
-  // Novo State para saber exatamente onde você está pisando
   const [localAtual, setLocalAtual] = useState(null);
 
   // ================================= GEOJSON ----------------------------------------------
@@ -134,7 +133,6 @@ export default function MapView() {
   
   useEffect(() => {
     if (!posicaoUsuario || !dadosGeoJson) return;
-    // Leaflet usa [Lat, Lng], GeoJSON usa [Lng, Lat]. Invertendo para a matemática bater.
     const ptLngLat = [posicaoUsuario[1], posicaoUsuario[0]]; 
     
     let achou = false;
@@ -190,13 +188,13 @@ export default function MapView() {
     setSearchTerm('');
     setSelectedField(null);
     setIsDropdownOpen(false);
-    setShowLots(false); // Apaga os lotes para limpar a tela
+    setShowLots(false); 
   };
 
   const selecionarCampo = (nomeFazenda) => {
     setSearchTerm(nomeFazenda);
     setSelectedField(nomeFazenda);
-    setShowLots(true); // Acende os lotes (só deste campo) magicamente
+    setShowLots(true); 
     setIsDropdownOpen(false);
 
     if (!dadosGeoJson) return;
@@ -208,7 +206,11 @@ export default function MapView() {
   };
 
   const focarNoUsuario = () => {
-    if (!posicaoUsuario) return;
+    if (!posicaoUsuario) {
+      // Se não tiver GPS ainda, tenta forçar a atualização (feedback visual pro usuário)
+      alert("Aguardando o sinal do GPS... Tente novamente em alguns segundos!");
+      return;
+    }
     setCamera({ center: posicaoUsuario, zoom: CONFIG_ZOOM_PROXIMIDADE, bounds: null });
   };
 
@@ -254,33 +256,29 @@ export default function MapView() {
     const isSelectedField = selectedField && props.NOME_FAZ === selectedField;
     const isUserHere = localAtual && props.NOME_FAZ === localAtual.campo && props.TALHAO === localAtual.talhao;
 
-    // Prioridade Máxima: Onde o usuário está pisando agora
     if (isUserHere) {
       return { color: COR_LOTE_ATIVO_BORDA, weight: 3, opacity: 1, fillColor: COR_LOTE_ATIVO_FUNDO, fillOpacity: 0.6 };
     }
 
-    // Se houver um campo selecionado na busca
     if (selectedField) {
       if (isSelectedField) {
-        // Campo focado
         return { color: '#00ff88', weight: 2.5, opacity: 1, fillColor: '#00c97a', fillOpacity: 0.35 };
       } else {
-        // Restante da fazenda escurecida
         return { color: '#333333', weight: 0.5, opacity: 0.3, fillColor: '#1a1a1a', fillOpacity: 0.1 };
       }
     }
 
-    // Visão Geral Padrão
     if (isRua) {
       return { color: '#666666', weight: 1, opacity: 0.7, fillColor: '#505050', fillOpacity: 0.18 };
     }
     
+    // NOVO VISUAL AGRÍCOLA MAIS FORTE E VISÍVEL
     return {
-      color: '#00b37e',
-      weight: showLots ? 1 : 0.4,
-      opacity: 0.35,
-      fillColor: '#00b37e',
-      fillOpacity: 0.06
+      color: '#007A4D', // Borda verde escura sólida e marcante
+      weight: showLots ? 2 : 1.5, // Mais grossa
+      opacity: 0.9, // Quase opaco na linha
+      fillColor: '#00D68F', // Verde interno mais vivo
+      fillOpacity: 0.25 // Fundo sutil mas presente
     };
   };
 
@@ -290,7 +288,6 @@ export default function MapView() {
     const props = feature.properties || {};
     const isRua = props.TALHAO == 666;
 
-    // Só exibe a placa se showLots for true E (não tiver filtro ativo OU for o campo filtrado)
     const deveMostrarLote = !isRua && showLots && (!selectedField || props.NOME_FAZ === selectedField);
 
     if (deveMostrarLote) {
@@ -317,7 +314,6 @@ export default function MapView() {
   return (
     <div className="mapview-container" style={{ position: 'relative' }}>
       
-      {/* Estilo CSS injetado direto no componente para garantir a fonte perfeita e sem quebrar nada externo */}
       <style>{`
         .map-label-custom {
           font-family: Arial, sans-serif !important;
@@ -332,8 +328,34 @@ export default function MapView() {
           background: transparent !important;
           border: none !important;
           box-shadow: none !important;
+          white-space: nowrap;
+          transform: translate(-50%, -50%); /* Centraliza o texto no Marker DivIcon */
         }
-        .map-label-custom::before { display: none; /* remove a setinha do leaflet */ }
+        .map-label-custom::before { display: none; }
+        .clickable-marker { 
+          cursor: pointer; 
+          pointer-events: auto !important; /* Essencial para o clique funcionar no texto */
+        }
+        /* Botão flutuante de GPS (Centralizar) */
+        .floating-gps-btn {
+          position: absolute;
+          bottom: 140px; /* Acima da plaquinha de Estou Em... */
+          right: 20px;
+          z-index: 1000;
+          background-color: white;
+          border: 2px solid rgba(0,0,0,0.2);
+          border-radius: 50%;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justifyContent: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+          font-size: 20px;
+          transition: background-color 0.2s;
+        }
+        .floating-gps-btn:active { background-color: #f0f0f0; }
       `}</style>
 
       {/* ================= BUSCA E BOTÃO X ================= */}
@@ -351,7 +373,7 @@ export default function MapView() {
           />
           
           {(searchTerm || selectedField) && (
-            <button className="clear-search-btn" onClick={limparFiltro} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '16px' }}>
+            <button className="clear-search-btn" onClick={limparFiltro} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '16px', zIndex: 10 }}>
               ✕
             </button>
           )}
@@ -383,7 +405,6 @@ export default function MapView() {
 
           {dadosParaMapa && (
             <GeoJSON
-              // Atualizamos a chave caso você ande de um talhão para outro, forçando a re-renderização da cor Ativa
               key={`geo-${selectedField}-${showLots}-${showStreets}-${localAtual?.talhao || 'none'}`}
               data={dadosParaMapa}
               style={obterEstiloArea}
@@ -392,21 +413,33 @@ export default function MapView() {
           )}
 
           {showFieldNames && centrosParaExibir.map((fazenda) => (
-            <Marker key={`nome-${fazenda.nome}`} position={fazenda.centro} icon={iconeInvisivel}>
-              <Tooltip permanent direction="center" className="map-label-custom">
-                {fazenda.nome}
-              </Tooltip>
-            </Marker>
+            <Marker 
+              key={`nome-${fazenda.nome}`} 
+              position={fazenda.centro} 
+              icon={criarIconeTexto(fazenda.nome)} /* Transformamos o nome num ícone físico! */
+              eventHandlers={{
+                click: () => selecionarCampo(fazenda.nome) // Agora funciona liso.
+              }}
+            />
           ))}
 
         </MapContainer>
       </div>
 
+      {/* ================= BOTÃO FLUTUANTE DE GPS ================= */}
+      <button 
+        className="floating-gps-btn" 
+        onClick={focarNoUsuario} 
+        title="Minha Localização"
+      >
+        🎯
+      </button>
+
       {/* ================= INDICADOR DE LOCALIZAÇÃO ================= */}
       {localAtual && (
         <div style={{
           position: 'absolute',
-          bottom: '85px', // Acima do bottom-sheet
+          bottom: '85px', 
           left: '50%',
           transform: 'translateX(-50%)',
           backgroundColor: 'rgba(20, 20, 20, 0.85)',
@@ -418,10 +451,10 @@ export default function MapView() {
           border: `1px solid ${COR_LOTE_ATIVO_BORDA}`,
           boxShadow: `0 0 8px ${COR_LOTE_ATIVO_BORDA}40`,
           zIndex: 1000,
-          pointerEvents: 'none', // Para não bloquear clicks no mapa
+          pointerEvents: 'none', 
           whiteSpace: 'nowrap'
         }}>
-          Estou em {localAtual.campo}, Talhão {localAtual.talhao}
+          Estou em {localAtual.campo}, lote {localAtual.talhao}
         </div>
       )}
 
@@ -462,6 +495,7 @@ export default function MapView() {
           </div>
 
           <div className="controls-grid">
+            {/* Mantive o do menu pra caso você prefira, mas o flutuante é muito mais ágil */}
             <button className="action-btn" onClick={focarNoUsuario}>Centralizar</button>
             <button className="action-btn" disabled={!selectedField} onClick={focarCampo}>Campo</button>
             <button className="action-btn" disabled={!selectedField || !posicaoUsuario} onClick={focarRotas}>Rotas</button>
