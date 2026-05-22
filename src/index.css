@@ -1,0 +1,58 @@
+/* ================================= DOCUMENTATION ------------------------------------------ */
+/* Script: index.css                                                                          */
+/* Purpose: Estilização responsiva, menu retrátil, dropdown de busca e botões de foco.        */
+/* ========================================================================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+body, html, #root { width: 100%; height: 100%; background-color: #121214; color: #e1e1e6; overflow: hidden; }
+
+/* Layout Base */
+.app-container { display: flex; width: 100vw; height: 100vh; position: relative; }
+.main-content { flex-grow: 1; height: 100%; position: relative; width: 100%; }
+
+/* Menu Lateral Retrátil */
+.sidebar {
+  background-color: #1a1a1e; border-right: 1px solid #29292e; width: 260px;
+  display: flex; flex-direction: column; padding: 1.5rem; transition: transform 0.3s ease;
+  z-index: 10000;
+}
+.sidebar-header h2 { color: #00b37e; font-size: 1.4rem; margin-bottom: 2rem; font-weight: 700; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 0.5rem; }
+.sidebar-nav a { color: #c4c4cc; text-decoration: none; padding: 0.8rem 1rem; border-radius: 6px; font-weight: 500; }
+.sidebar-nav a.active, .sidebar-nav a:hover { background-color: #00875f; color: #fff; }
+
+/* Botão Hambúrguer Mobile */
+.mobile-menu-btn {
+  display: none; position: absolute; top: 15px; left: 15px; z-index: 10001;
+  background: #1a1a1e; border: 1px solid #29292e; color: #00b37e;
+  padding: 10px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Telas de Celular */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: block; }
+  .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .search-bar { top: 15px !important; left: 65px !important; width: calc(100% - 80px) !important; transform: none !important; }
+}
+
+/* Busca e Dropdown */
+.search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 9999; }
+.search-container input { width: 100%; padding: 0.9rem 1.2rem; border-radius: 8px; border: 1px solid #29292e; background-color: rgba(26,26,30,0.95); color: #fff; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); outline: none; }
+.search-dropdown { background: #1a1a1e; border: 1px solid #29292e; border-radius: 8px; margin-top: 5px; max-height: 200px; overflow-y: auto; list-style: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.search-dropdown li { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #29292e; }
+.search-dropdown li:hover { background: #00b37e; color: #fff; }
+
+/* Controles do Mapa */
+.mapview-container, .map-wrapper { width: 100%; height: 100%; position: relative; }
+.bottom-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; background: rgba(26,26,30,0.95); padding: 0.8rem 1.5rem; border-radius: 20px; border: 1px solid #29292e; display: flex; flex-direction: column; gap: 8px; }
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; color: #e1e1e6; font-size: 0.9rem; cursor: pointer; }
+.checkbox-label input { accent-color: #00b37e; width: 18px; height: 18px; }
+
+/* Botões de Foco Rápidos (Canto Direito) */
+.focus-buttons { position: absolute; bottom: 30px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.focus-btn { background: #00875f; color: white; border: none; padding: 12px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+.focus-btn:hover { background: #00b37e; transform: scale(1.05); }
+
+/* Labels Flutuantes do Mapa */
+.map-label { background: transparent !important; border: none !important; box-shadow: none !important; color: #00ffaa !important; font-weight: 800 !important; text-shadow: 2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000; font-size: 1.1rem !important; }
+.leaflet-container { background-color: #121214 !important; }
