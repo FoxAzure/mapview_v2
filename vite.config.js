@@ -1,11 +1,24 @@
 import { defineConfig } from 'vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import babel from '@rolldown/plugin-babel'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa' // Importa o plugin
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()] })
-  ],
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'MapView',
+        short_name: 'MapView',
+        theme_color: '#007A4D',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          }
+        ]
+      }
+    })
+  ]
 })
